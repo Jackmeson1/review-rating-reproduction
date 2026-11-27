@@ -1,0 +1,17 @@
+raw: 151254 reviews, 14681 users, 8713 items
+repo: 151226 interactions, 14681 users, 8713 items
+ASINs in item2IdMapping missing from raw: 0 ; raw ASINs not in mapping: 0
+interaction rows with no raw match: 0 ; user ids not resolving to exactly one reviewer: 0
+user mapping recovered: 14681 ids
+duplicate (user,item) pairs in repo interactions: 0
+raw reviews whose (user,item) is not in repo interactions: 28
+tokens: 14617894, in vocabulary: 7228864 (49.5%); kept words per review: 47.79
+  full/UserReviews.out: 14681 lines, empty 0, mean words 179.4 (untruncated 351.9), at cap 4250
+  full/ItemReviews.out: 8713 lines, empty 0, mean words 218.3 (untruncated 592.9), at cap 3473
+  full: documents built from 108743 reviews in ValTrain
+  valsel/UserReviews.out: 14681 lines, empty 0, mean words 179.4 (untruncated 351.9), at cap 4250
+  valsel/ItemReviews.out: 8713 lines, empty 0, mean words 218.3 (untruncated 592.9), at cap 3473
+  valsel: documents built from 108743 reviews in ValTrain
+paper Table 2, Grocery: 57.34 words per review, 177.24 per user, 155 per item
+BUILD_OK
+SAME_AS_TRAINED_ON

@@ -1,0 +1,5 @@
+WordDict 19987 words, retainWordVoca 20000 words, WordDict - retain: 0
+Train    retain words found: 19998 | in WordDict but not found:    0 | found but not in WordDict:   11 | exact match: False
+ValTrain retain words found: 19987 | in WordDict but not found:    0 | found but not in WordDict:    0 | exact match: True
+Total    retain words found: 20000 | in WordDict but not found:    0 | found but not in WordDict:   13 | exact match: False
+AllRaw   retain words found: 20000 | in WordDict but not found:    0 | found but not in WordDict:   13 | exact match: False

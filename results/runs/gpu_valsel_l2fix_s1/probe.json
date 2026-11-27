@@ -1,0 +1,1 @@
+PROBE_RESULT {"test_mse_real_docs": 1.139049666017422, "test_mse_shuffled_docs": 1.2189796072828787, "unscaled_l2_of_text_weights": 6.388021945953369, "user_bias_std": 0.01993260346353054, "item_bias_std": 0.05113918334245682, "w_0": 0.10799282789230347, "text_score_mean_first_batch": 4.428746223449707, "text_score_std_first_batch": 0.12148024886846542}

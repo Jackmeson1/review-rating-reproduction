@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+# review text and everything derived from it stays out of the repository
+data/
+*.out
+*.json.gz
+*.jsonl.gz
+ckpt/
+*.tgz
+node_modules/

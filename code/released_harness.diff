@@ -1,0 +1,155 @@
+diff --git a/../2023.0131/src/RPMIA.py b/RPMIA_run.py
+index 1d5838b..fa6bd7a 100644
+--- a/../2023.0131/src/RPMIA.py
++++ b/RPMIA_run.py
+@@ -2,11 +2,15 @@
+ import tensorflow as tf
+ import numpy as np
+ import math
++import sys
+ import tensorflow as tf
+ from time import time
+ from _auxiliaryTools.ExtractData import Dataset
+ from _auxiliaryTools.Evaluation import get_test_list_mask
+ epsilon = 1e-9
++import os, json
++if os.environ.get('RPMIA_SEED'):
++    np.random.seed(int(os.environ['RPMIA_SEED'])); tf.set_random_seed(int(os.environ['RPMIA_SEED']))
+ 
+ def ini_word_embed(num_words, latent_dim):
+     word_embeds = np.random.rand(num_words, latent_dim)
+@@ -191,7 +195,7 @@ if __name__ == "__main__":
+     window_size = 3#denote as c in paper
+     max_doc_length = 300
+     learning_rate = 0.001
+-    epochs = 200
++    epochs = int(os.environ.get('RPMIA_EPOCHS', 200))
+     batch_size = 200
+     num_aspect = 5#denote as M in paper
+     _EPSILON = 10e-9
+@@ -204,7 +208,7 @@ if __name__ == "__main__":
+     
+     # loading data
+     firTime = time()
+-    dataSet = Dataset(max_doc_length, "./outputs/output_G/") #!!!!!在这里更改数据所在目录!!!!!
++    dataSet = Dataset(max_doc_length, os.environ['RPMIA_DATA'])
+     word_dict, user_reviews, item_reviews, user_masks, item_masks, train, testRatings = dataSet.word_id_dict, dataSet.userReview_dict, dataSet.itemReview_dict, dataSet.userMask_dict, dataSet.itemMask_dict, dataSet.trainMtrx, dataSet.testRatings
+     secTime = time()
+ 
+@@ -405,61 +409,59 @@ if __name__ == "__main__":
+ # Model training and evaluation
+ train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
+ 
++# ---- harness below replaces the original loop; the optimiser step is the same ----
++out_dir = os.environ.get('RPMIA_OUT', '.')
++os.makedirs(out_dir, exist_ok=True)
++val_path = os.path.join(os.environ['RPMIA_DATA'], 'ValidateInteraction.out')
++val = None
++if os.path.exists(val_path):
++    val = get_test_list_mask(200, dataSet.load_ratingFile_as_list(val_path), user_reviews, item_reviews, user_masks, item_masks)
++max_steps = int(os.environ.get('RPMIA_MAX_STEPS', 0))  # >0: timing probe, stop after that many steps
++
++
++def run_eval(sess, batches):
++    u_b, i_b, ui_b, ii_b, um_b, im_b, r_b = batches
++    sq, ab = [], []
++    for k in range(len(ui_b)):
++        eval_model(users, items, users_inputs, items_inputs, users_masks_inputs, items_masks_inputs,
++                   dropout_rate, b_inputs, predict_rating, sess, u_b[k], i_b[k], ui_b[k], ii_b[k],
++                   um_b[k], im_b[k], r_b[k], np.zeros([len(ui_b[k]), 1, 1]), sq, ab)
++    return float(np.mean(sq)), float(np.mean(ab))
++
++
++test = (user_test, item_test, user_input_test, item_input_test, user_mask_test, item_mask_test, rating_input_test)
++saver = tf.train.Saver(max_to_keep=1)
++steps_per_epoch = int(math.ceil(len(user_input) / float(batch_size)))
++print("train rows %d, steps/epoch %d, epochs %d, validation %s" % (len(user_input), steps_per_epoch, epochs, val is not None), flush=True)
++best = None
+ with tf.Session() as sess:
+-        sess.run(tf.global_variables_initializer())
+-
+-        for e in range(epochs):
+-            t = time()
+-            loss_total = 0.0
+-            count = 0.0
+-            for i in range(int(math.ceil(len(user_input) / float(batch_size)))):
+-                user_batch, item_batch, user_input_batch, item_input_batch, user_mask_batch, item_mask_batch, rates_batch= get_train_instance_batch(
+-                    i, batch_size, user_input, item_input, rateings,user_reviews, item_reviews, user_masks, item_masks)
+-                _, loss_val = sess.run([train_step, loss],
+-                                                             feed_dict={users: user_batch, items: item_batch,
+-                                                                        users_inputs: user_input_batch,
+-                                                                        items_inputs: item_input_batch,
+-                                                                        users_masks_inputs: user_mask_batch,
+-                                                                        items_masks_inputs: item_mask_batch,
+-                                                                        ratings: rates_batch,
+-                                                                        b_inputs: b_train,
+-                                                                        dropout_rate: drop_out})
+-                loss_total += loss_val
+-                count += 1.0
+-            t1 = time()
+-            mses, maes = [], []
+-            for i in range(len(user_input_test)):
+-                b_test = np.zeros([len(user_input_test[i]),1, 1])
+-                eval_model(users, items, users_inputs, items_inputs, users_masks_inputs, items_masks_inputs,
+-                           dropout_rate, b_inputs, predict_rating, sess, user_test[i],
+-                           item_test[i], user_input_test[i],
+-                           item_input_test[i], user_mask_test[i], item_mask_test[i], rating_input_test[i], b_test, mses, maes)
+-
+-            mse = np.array(mses).mean()
+-            mae = np.array(maes).mean()
+-            t2 = time()
+-            print ("epoch%d  time: %.3fs  loss: %.3f  test time: %.3fs  mse: %.3f  mae: %.3f"%(e, (t1 - t),loss_total/count,(t2 - t1), mse, mae))
+-            
+-            saver = tf.train.Saver()
+-            saver.save(sess, "model/model_{}/epoch{}".format(e, e))
+-            
+-            # 将对应的变量写入文件中
+-            f = open('var_epoch_{}.txt'.format(e), 'a')
+-            for i in range(len(user_input_test)):
+-                b_test = np.zeros([len(user_input_test[i]),1, 1])
+-                predicts = sess.run(predict_rating, feed_dict={users: user_test[i], items: item_test[i], users_inputs: user_input_test[i],
+-                                                               items_inputs: item_input_test[i], users_masks_inputs: user_mask_test[i],
+-                                                               items_masks_inputs: item_mask_test[i], b_inputs: b_test,
+-                                                               dropout_rate: 1.0})
+-            f.write("user items predict_rating")
+-            
+-            for (x, y, z) in zip(user_test[i], item_test[i], predicts.tolist()):
+-                print(x, y, z[0], file=f)
+-            
+-            print(rand_matrix, file=f)
+-            
+-            f.close()
+-#             break
+-
+-        # 保存最终的模型
+-#             saver.save(sess, "model/v1")
++    sess.run(tf.global_variables_initializer())
++    for e in range(epochs):
++        t = time()
++        loss_total = 0.0
++        for i in range(steps_per_epoch):
++            user_batch, item_batch, user_input_batch, item_input_batch, user_mask_batch, item_mask_batch, rates_batch = get_train_instance_batch(
++                i, batch_size, user_input, item_input, rateings, user_reviews, item_reviews, user_masks, item_masks)
++            _, loss_val = sess.run([train_step, loss],
++                                   feed_dict={users: user_batch, items: item_batch,
++                                              users_inputs: user_input_batch, items_inputs: item_input_batch,
++                                              users_masks_inputs: user_mask_batch, items_masks_inputs: item_mask_batch,
++                                              ratings: rates_batch, b_inputs: b_train, dropout_rate: drop_out})
++            loss_total += loss_val
++            if max_steps and i + 1 == max_steps:
++                print("PROBE %d steps in %.1fs -> %.3fs/step, est %.1f min/epoch" % (max_steps, time() - t, (time() - t) / max_steps, (time() - t) / max_steps * steps_per_epoch / 60), flush=True)
++                sys.exit(0)
++        t1 = time()
++        rec = {"epoch": e, "train_loss": loss_total / steps_per_epoch, "train_s": round(t1 - t, 1)}
++        rec["test_mse"], rec["test_mae"] = run_eval(sess, test)
++        if val is not None:
++            rec["val_mse"], rec["val_mae"] = run_eval(sess, val)
++        rec["eval_s"] = round(time() - t1, 1)
++        key = rec.get("val_mse", rec["test_mse"])
++        if best is None or key < best:
++            best = key
++            rec["saved"] = True
++            saver.save(sess, os.path.join(out_dir, "ckpt", "best"), write_meta_graph=False)
++        with open(os.path.join(out_dir, "epochs.jsonl"), "a") as f:
++            f.write(json.dumps(rec) + "\n")
++        print(json.dumps(rec), flush=True)

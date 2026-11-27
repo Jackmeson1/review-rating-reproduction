@@ -1,0 +1,1 @@
+PROBE_RESULT {"test_mse_real_docs": 1.0423725278550742, "test_mse_shuffled_docs": 1.548093659658001, "test_mse_shuffled_user_docs_only": 1.3376570390503426, "test_mse_shuffled_item_docs_only": 1.3234291356003283}

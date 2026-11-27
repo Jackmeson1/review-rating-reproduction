@@ -1,0 +1,31 @@
+raw/g5.json.gz: OK
+rows {'train': 108743, 'val': 12017, 'test': 30466, 'dropped': 28}
+users 14681 items 8713 | train 108743 val 12017 test 30466
+global mean: test 1.1932 | biases damping 5: test 0.9742 (earlier hand-rolled: 0.9742)
+biases, tuned damping: val 0.9707 at user 5, item 8
+  mf rank  4 wd 0.02: best val 0.9707 at epoch 1
+  mf rank  4 wd 0.05: best val 0.9705 at epoch 2
+  mf rank  4 wd 0.10: best val 0.9704 at epoch 3
+  mf rank  4 wd 0.20: best val 0.9705 at epoch 4
+  mf rank  4 wd 0.40: best val 0.9705 at epoch 7
+  mf rank  8 wd 0.02: best val 0.9707 at epoch 1
+  mf rank  8 wd 0.05: best val 0.9707 at epoch 1
+  mf rank  8 wd 0.10: best val 0.9707 at epoch 1
+  mf rank  8 wd 0.20: best val 0.9707 at epoch 1
+  mf rank  8 wd 0.40: best val 0.9706 at epoch 6
+  mf rank 16 wd 0.02: best val 0.9705 at epoch 1
+  mf rank 16 wd 0.05: best val 0.9705 at epoch 1
+  mf rank 16 wd 0.10: best val 0.9705 at epoch 1
+  mf rank 16 wd 0.20: best val 0.9706 at epoch 1
+  mf rank 16 wd 0.40: best val 0.9701 at epoch 9
+  mf rank 32 wd 0.02: best val 0.9704 at epoch 1
+  mf rank 32 wd 0.05: best val 0.9704 at epoch 1
+  mf rank 32 wd 0.10: best val 0.9702 at epoch 2
+  mf rank 32 wd 0.20: best val 0.9699 at epoch 3
+  mf rank 32 wd 0.40: best val 0.9698 at epoch 8
+biased MF, tuned: val 0.9698 at rank 32, wd 0.4, epochs 8
+  chosen MF over 3 seeds: val 0.9698, 0.9713, 0.9704
+floor model: bias
+FLOOR bias: val 0.9707 test 0.9725 | tuned biases alone: test 0.9725
+train out-of-fold floor MSE 0.9909
+FLOOR_DONE
